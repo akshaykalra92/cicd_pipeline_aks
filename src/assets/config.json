@@ -1,0 +1,5 @@
+{
+    "authConfig": {
+      "backendUrl": "http://backend:32012"
+    }
+}

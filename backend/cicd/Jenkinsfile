@@ -1,0 +1,58 @@
+def COLOR_MAP = ['SUCCESS': 'good', 'FAILURE': 'danger', 'UNSTABLE': 'danger', 'ABORTED': 'danger']
+
+pipeline {
+    agent { label 'master'}
+    tools {
+        maven 'maven-3.6.3'
+    }
+    parameters {
+        booleanParam(name: 'maven_build', defaultValue: true, description: 'Enable/Disable maven Build')
+        booleanParam(name: 'docker_build_push', defaultValue: true, description: 'Enable/Disable Docker build and push')
+        booleanParam(name: 'deploy', defaultValue: false, description: 'Enable/Disable Deploy')
+    }
+    stages {
+        stage ('Maven Build') {
+            when {
+                expression {
+                    return params.maven_build
+                }
+            }
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+        stage ('Exec Maven') {
+            when {
+                expression {
+                    return params.artifactory_build_publish
+                }
+            }
+            steps {
+                rtMavenRun (
+                    tool: 'maven',
+                    pom: 'pom.xml',
+                    goals: 'clean package',
+                    deployerId: "MAVEN_DEPLOYER",
+                    resolverId: "MAVEN_RESOLVER"
+                )
+            }
+        }
+        stage('Docker Build and Push') {
+            when {
+                expression {
+                    return params.docker_build_push
+                }
+            }
+            steps {
+                script {
+                    myapp = docker.build("aks/backend:latest")
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker_credential') {
+                        myapp.push("latest")
+                        myapp.push("${env.BUILD_ID}")
+                    }
+                }
+                sh "docker image prune -a -f"
+            }
+        }
+    }
+}

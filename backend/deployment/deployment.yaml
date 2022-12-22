@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    name: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      name: backend
+  template:
+    metadata:
+      name: backend
+      labels:
+        name: backend
+    spec:
+      containers:
+        - name:  backend
+          image:aks/backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+          - name: config-volume
+            mountPath: "/config"
+          resources:
+            requests:
+              memory: "300Mi"
+              cpu: "200m"
+            limits:
+              memory: "600Mi"
+              cpu: "400m"
+      volumes:
+      - name: config-volume
+        configMap:
+          name: backend
+          items:
+          - key: application
+            path: application.properties

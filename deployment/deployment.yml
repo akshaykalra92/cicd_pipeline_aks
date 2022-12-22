@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    name: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      name: frontend
+  template:
+    metadata:
+      name: frontend
+      labels:
+        name: frontend
+    spec:
+      containers:
+        - name:  frontend
+          image: aks/frontend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: config-volume
+            mountPath: "/usr/share/nginx/html/assets"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+      volumes:
+      - name: config-volume
+        configMap:
+          name: frontend
+          items:
+          - key: config
+            path: config.json
